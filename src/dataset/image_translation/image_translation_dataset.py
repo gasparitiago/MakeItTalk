@@ -26,12 +26,8 @@ class image_translation_raw_dataset(data.Dataset):
 
     def __init__(self, num_frames=16):
 
-        if platform.release() == '4.4.0-83-generic': # stargazer
-            self.src_dir = r'/mnt/ntfs/Dataset/TalkingToon/VoxCeleb2_imagetranslation/raw_fl3d'
-            self.mp4_dir = r'/mnt/ntfs/Dataset/VoxCeleb2/train_set/dev/mp4'
-        else: # gypsum
-            self.src_dir = r'/mnt/nfs/scratch1/yangzhou/VoxCeleb2_compressed_imagetranslation/raw_fl3d' # raw vox with 1 per vid
-            self.mp4_dir = r'/mnt/nfs/work1/kalo/yangzhou/VoxCeleb2/train_set/dev/mp4'
+        self.src_dir = r'/content/MakeItTalk/dataset_makeittalk/src' # raw vox with 1 per vid
+        self.mp4_dir = r'/content/MakeItTalk/dataset_makeittalk/videos'
 
         self.fls_filenames = glob.glob1(self.src_dir, '*')
         self.num_random_frames = num_frames + 1
@@ -50,11 +46,9 @@ class image_translation_raw_dataset(data.Dataset):
 
         # load mp4 file
         # ================= raw VOX version ================================
-        mp4_filename = fls_filename[:-4].split('_x_')
-        mp4_id = mp4_filename[0].split('_')[-1]
-        mp4_vname = mp4_filename[1]
+        mp4_filename = fls_filename
         mp4_vid = mp4_filename[2][:-3]
-        video_dir = os.path.join(self.mp4_dir, mp4_id, mp4_vname, mp4_vid + '.mp4')
+        video_dir = os.path.join(self.mp4_dir, mp4_vid + '.mp4')
         # print('============================\nvideo_dir : ' + video_dir, item)
         # ======================================================================
 
@@ -83,10 +77,10 @@ class image_translation_raw_dataset(data.Dataset):
                 img_fl = vis_landmark_on_img(img_fl, np.reshape(fl, (68, 3)))
 
                 frame = np.concatenate((img_fl, img_video), axis=2)
-                frame = cv2.resize(frame, (256, 256))  # 256 x 256  6
+                frame = cv2.resize(frame, (512, 512))  # 512 x 512  6
                 frames.append(frame)
 
-        frames = np.stack(frames, axis=0).astype(np.float32)/255.0  # N x 256 x 256 x 6
+        frames = np.stack(frames, axis=0).astype(np.float32)/255.0  # N x 512 x 512 x 6
 
         image_in = np.concatenate([frames[0:-1, :, :, 0:3], frames[1:, :, :, 3:6]], axis=3)
         image_out = frames[0:-1, :, :, 3:6]
@@ -103,12 +97,8 @@ class image_translation_raw74_dataset(data.Dataset):
 
     def __init__(self, num_frames=16):
 
-        if platform.release() == '4.4.0-83-generic': # stargazer
-            self.src_dir = r'/mnt/ntfs/Dataset/TalkingToon/VoxCeleb2_imagetranslation/raw_fl3d'
-            self.mp4_dir = r'/mnt/ntfs/Dataset/VoxCeleb2/train_set/dev/mp4'
-        else: # gypsum
-            self.src_dir = r'/mnt/nfs/scratch1/yangzhou/VoxCeleb2_compressed_imagetranslation/raw_fl3d' # raw vox with 1 per vid
-            self.mp4_dir = r'/mnt/nfs/work1/kalo/yangzhou/VoxCeleb2/train_set/dev/mp4'
+        self.src_dir = r'/content/MakeItTalk/dataset_makeittalk/src' # raw vox with 1 per vid
+        self.mp4_dir = r'/content/MakeItTalk/dataset_makeittalk/videos'
 
         self.fls_filenames = glob.glob1(self.src_dir, '*')
         self.num_random_frames = num_frames + 1
@@ -154,17 +144,17 @@ class image_translation_raw74_dataset(data.Dataset):
             ret, img_video = video.read()
 
             if(j in random_frame_indices):
-                fl = fls[j, 1:] / 224. * 256.
+                fl = fls[j, 1:] / 224. * 512.
                 fan_predict_landmarks.append(np.reshape(fl, (68, 3)))
 
-                img_video = cv2.resize(img_video, (256, 256))
+                img_video = cv2.resize(img_video, (512, 512))
                 frames.append(img_video.transpose((2, 0, 1)))
 
         fan_predict_landmarks = np.stack(fan_predict_landmarks, axis=0)
         frames = np.stack(frames, axis=0).astype(np.float32) / 255.0
 
         image_in = frames[1:, :, :]
-        image_out = frames[0:-1, :, :]  # N x 3 x 256 x 256
+        image_out = frames[0:-1, :, :]  # N x 3 x 512 x 512
 
         return image_in, image_out, fan_predict_landmarks[0:-1]
 
@@ -176,12 +166,8 @@ class image_translation_raw_test_dataset(data.Dataset):
 
     def __init__(self, num_frames=16):
 
-        if platform.release() == '4.4.0-83-generic':
-            self.src_dir = r'/mnt/ntfs/Dataset/TalkingToon/VoxCeleb2_imagetranslation/raw_fl3d'
-            self.mp4_dir = r'/mnt/ntfs/Dataset/VoxCeleb2/train_set/dev/mp4'
-        else:
-            self.src_dir = r'/mnt/nfs/scratch1/yangzhou/VoxCeleb2_compressed_imagetranslation/raw_fl3d'
-            self.mp4_dir = r'/mnt/nfs/work1/kalo/yangzhou/VoxCeleb2/train_set/dev/mp4'
+        self.src_dir = r'/content/MakeItTalk/dataset_makeittalk/src' # raw vox with 1 per vid
+        self.mp4_dir = r'/content/MakeItTalk/dataset_makeittalk/videos'
 
         self.fls_filenames = glob.glob1(self.src_dir, '*')
         self.num_random_frames = num_frames + 1
@@ -212,6 +198,7 @@ class image_translation_raw_test_dataset(data.Dataset):
             print('Unable to open video file')
             exit(0)
         _, random_face = random_video.read()
+        random_face = cv2.resize(random_face, (512, 512))
 
         # load mp4 file
         # ================= raw VOX version ================================
@@ -244,12 +231,15 @@ class image_translation_raw_test_dataset(data.Dataset):
             fl = fls[j, 1:].astype(int)
             img_fl = vis_landmark_on_img(img_fl, np.reshape(fl, (68, 3)))
 
+            img_fl = cv2.resize(img_fl, (512, 512))
+            img_video = cv2.resize(img_video, (512, 512))
+
             # print(img_fl.shape, random_face.shape, img_video.shape)
             frame = np.concatenate((img_fl, random_face, img_video), axis=2)
-            frame = cv2.resize(frame, (256, 256))  # 256 x 256  6
+            frame = cv2.resize(frame, (512, 512))  # 512 x 512  6
             frames.append(frame)
 
-        frames = np.stack(frames, axis=0).astype(np.float32)/255.0  # N x 256 x 256 x 6
+        frames = np.stack(frames, axis=0).astype(np.float32)/255.0  # N x 512 x 512 x 6
         image_in = frames[:, :, :, 0:6]
         image_out = frames[:, :, :, 6:9]
 
@@ -264,12 +254,8 @@ class image_translation_preprocessed_dataset(data.Dataset):
 
     def __init__(self, num_frames=16):
 
-        if platform.release() == '4.4.0-83-generic':
-            self.src_dir = r'/mnt/ntfs/Dataset/TalkingToon/VoxCeleb2_imagetranslation/raw_fl3d'
-            self.mp4_dir = r'/mnt/ntfs/Dataset/VoxCeleb2/train_set/dev/mp4'
-        else:
-            self.src_dir = r'/mnt/nfs/scratch1/yangzhou/PreprocessedVox_imagetranslation/raw_fl3d' # first order
-            self.mp4_dir = r'/mnt/nfs/scratch1/yangzhou/PreprocessedVox_mp4'
+        self.src_dir = r'/content/MakeItTalk/dataset_makeittalk/src' # raw vox with 1 per vid
+        self.mp4_dir = r'/content/MakeItTalk/dataset_makeittalk/videos'
 
         self.fls_filenames = glob.glob1(self.src_dir, '*')
         self.num_random_frames = num_frames + 1
@@ -314,10 +300,12 @@ class image_translation_preprocessed_dataset(data.Dataset):
                 fl = fls[int(j*self.fps_scale), 1:].astype(int)
                 img_fl = vis_landmark_on_img(img_fl, np.reshape(fl, (68, 3)))
 
+                img_video = cv2.resize(img_video, (512, 512))
+                img_fl = cv2.resize(img_fl, (512, 512))
                 frame = np.concatenate((img_fl, img_video), axis=2)
                 frames.append(frame)
 
-        frames = np.stack(frames, axis=0).astype(np.float32)/255.0  # N x 256 x 256 x 6
+        frames = np.stack(frames, axis=0).astype(np.float32)/255.0  # N x 512 x 512 x 6
 
         image_in = np.concatenate([frames[0:-1, :, :, 0:3], frames[1:, :, :, 3:6]], axis=3)
         image_out = frames[0:-1, :, :, 3:6]
@@ -333,14 +321,8 @@ class image_translation_preprocessed_test_dataset(data.Dataset):
 
     def __init__(self, num_frames=16):
 
-        if platform.release() == '4.4.0-83-generic':
-            self.src_dir = r'/mnt/ntfs/Dataset/TalkingToon/VoxCeleb2_imagetranslation/raw_fl3d'
-            self.mp4_dir = r'/mnt/ntfs/Dataset/VoxCeleb2/train_set/dev/mp4'
-        else:
-            # self.src_dir = r'/mnt/nfs/scratch1/yangzhou/VoxCeleb2_imagetranslation/raw_fl3d'
-            # self.mp4_dir = r'/mnt/nfs/work1/kalo/yangzhou/VoxCeleb2/train_set/dev/mp4'
-            self.src_dir = r'/mnt/nfs/scratch1/yangzhou/PreprocessedVox_imagetranslation/raw_fl3d'
-            self.mp4_dir = r'/mnt/nfs/scratch1/yangzhou/PreprocessedVox_mp4'
+        self.src_dir = r'/content/MakeItTalk/dataset_makeittalk/src' # raw vox with 1 per vid
+        self.mp4_dir = r'/content/MakeItTalk/dataset_makeittalk/videos'
 
         self.fls_filenames = glob.glob1(self.src_dir, '*')
         self.num_random_frames = num_frames + 1
@@ -369,6 +351,7 @@ class image_translation_preprocessed_test_dataset(data.Dataset):
             print('Unable to open video file')
             exit(0)
         _, random_face = random_video.read()
+        random_face = cv2.resize(random_face, (512, 512))
 
         # # ================= preprocessed VOX version ================================
         video_dir = os.path.join(self.mp4_dir, fls_filename[10:-7]+'.mp4')
@@ -395,11 +378,14 @@ class image_translation_preprocessed_test_dataset(data.Dataset):
             fl = fls[int(j*self.fps_scale), 1:].astype(int)
             img_fl = vis_landmark_on_img(img_fl, np.reshape(fl, (68, 3)))
 
+            img_fl = cv2.resize(img_fl, (512, 512))
+            img_video = cv2.resize(img_video, (512, 512))
+
             frame = np.concatenate((img_fl, random_face, img_video), axis=2)
-            # frame = cv2.resize(frame, (256, 256))  # 256 x 256  6
+
             frames.append(frame)
 
-        frames = np.stack(frames, axis=0).astype(np.float32)/255.0  # N x 256 x 256 x 9
+        frames = np.stack(frames, axis=0).astype(np.float32)/255.0  # N x 512 x 512 x 9
 
         image_in = frames[:, :, :, 0:6]
         image_out = frames[:, :, :, 6:9]
@@ -419,15 +405,12 @@ class image_translation_raw98_dataset(data.Dataset):
 
     def __init__(self, num_frames=1):
 
-        if platform.release() == '4.4.0-83-generic': # stargazer
-            self.src_dir = r'/mnt/ntfs/Dataset/TalkingToon/VoxCeleb2_imagetranslation'
-            self.mp4_dir = r'/mnt/ntfs/Dataset/VoxCeleb2/train_set/dev/mp4'
-        else:
-            self.src_dir = r'/mnt/nfs/scratch1/yangzhou/VoxCeleb2_compressed_imagetranslation'
-            self.mp4_dir = r'/mnt/nfs/work1/kalo/yangzhou/VoxCeleb2/train_set/dev/mp4'
+        self.src_dir = r'/content/MakeItTalk/dataset_makeittalk/src' # raw vox with 1 per vid
+        self.mp4_dir = r'/content/MakeItTalk/dataset_makeittalk/videos'
 
         # self.fls_filenames = glob.glob1(self.src_dir, '*')
-        self.fls_filenames = np.loadtxt(os.path.join(self.src_dir, 'filename_index.txt'), dtype=str)[:, 1]
+        self.fls_filenames = np.loadtxt(os.path.join(self.src_dir, 'filename_index.txt'), dtype=str)
+        print(self.fls_filenames)
         self.num_random_frames = num_frames + 1
 
         print(os.name, self.fls_filenames.shape)
@@ -469,13 +452,13 @@ class image_translation_raw98_dataset(data.Dataset):
             ret, img = video.read()
 
             if(j in random_frame_indices):
-                img_video = cv2.resize(img, (256, 256))
+                img_video = cv2.resize(img, (512, 512))
                 frames.append(img_video.transpose((2, 0, 1)))
 
         frames = np.stack(frames, axis=0).astype(np.float32)/255.0
 
         image_in = frames[1:, :, :]
-        image_out = frames[0:-1, :, :] # N x 3 x 256 x 256
+        image_out = frames[0:-1, :, :] # N x 3 x 512 x 512
 
         return image_in, image_out
 
@@ -511,7 +494,7 @@ class image_translation_raw98_dataset(data.Dataset):
 
             if(j in random_frame_indices):
                 # online landmark
-                img_video = cv2.resize(img, (256, 256))
+                img_video = cv2.resize(img, (512, 512))
                 img = img_video.transpose((2, 0, 1)) / 255.0
                 inputs = torch.tensor(img, dtype=torch.float32, requires_grad=False).unsqueeze(0).to(self.device)
                 with torch.no_grad():
@@ -523,10 +506,12 @@ class image_translation_raw98_dataset(data.Dataset):
                 img_fl = np.ones(shape=(256, 256, 3)) * 255
                 img_fl = vis_landmark_on_img98(img_fl * 255.0, pred_landmarks)  # 98x2
 
+                img_fl = cv2.resize(img_fl, (512, 512))
+
                 frame = np.concatenate((img_fl, img_video), axis=2)
                 frames.append(frame)
 
-        frames = np.stack(frames, axis=0).astype(np.float32)/255.0  # N x 256 x 256 x 6
+        frames = np.stack(frames, axis=0).astype(np.float32)/255.0  # N x 512 x 512 x 6
 
         image_in = np.concatenate([frames[0:-1, :, :, 0:3], frames[1:, :, :, 3:6]], axis=3)
         image_out = frames[0:-1, :, :, 3:6]
@@ -542,12 +527,8 @@ class image_translation_preprocessed98_dataset(data.Dataset):
 
     def __init__(self, num_frames=16):
 
-        if platform.release() == '4.4.0-83-generic':
-            self.src_dir = r'/mnt/ntfs/Dataset/TalkingToon/VoxCeleb2_imagetranslation'
-            self.mp4_dir = r'/mnt/ntfs/Dataset/VoxCeleb2/train_set/dev/mp4'
-        else:
-            self.src_dir = r'/mnt/nfs/scratch1/yangzhou/PreprocessedVox_imagetranslation/raw_fl3d' # first order
-            self.mp4_dir = r'/mnt/nfs/scratch1/yangzhou/PreprocessedVox_mp4'
+        self.src_dir = r'/content/MakeItTalk/dataset_makeittalk/src' # raw vox with 1 per vid
+        self.mp4_dir = r'/content/MakeItTalk/dataset_makeittalk/videos'
 
         self.fls_filenames = glob.glob1(self.src_dir, '*')
         self.num_random_frames = num_frames + 1
@@ -579,13 +560,13 @@ class image_translation_preprocessed98_dataset(data.Dataset):
             ret, img_video = video.read()
 
             if(j in random_frame_indices):
-                img_video = cv2.resize(img_video, (256, 256))
+                img_video = cv2.resize(img_video, (512, 512))
                 frames.append(img_video.transpose((2, 0, 1)))
 
-        frames = np.stack(frames, axis=0).astype(np.float32)/255.0  # N x 256 x 256 x 6
+        frames = np.stack(frames, axis=0).astype(np.float32)/255.0  # N x 512 x 512 x 6
 
         image_in = frames[1:, :, :]
-        image_out = frames[0:-1, :, :]  # N x 3 x 256 x 256
+        image_out = frames[0:-1, :, :]  # N x 3 x 512 x 512
 
         return image_in, image_out
 
@@ -597,15 +578,11 @@ class image_translation_raw98_test_dataset(data.Dataset):
 
     def __init__(self, num_frames=16):
 
-        if platform.release() == '4.4.0-83-generic':
-            self.src_dir = r'/mnt/ntfs/Dataset/TalkingToon/VoxCeleb2_imagetranslation'
-            self.mp4_dir = r'/mnt/ntfs/Dataset/VoxCeleb2/train_set/dev/mp4'
-        else:
-            self.src_dir = r'/mnt/nfs/scratch1/yangzhou/VoxCeleb2_compressed_imagetranslation'
-            self.mp4_dir = r'/mnt/nfs/work1/kalo/yangzhou/VoxCeleb2/train_set/dev/mp4'
+        self.src_dir = r'/content/MakeItTalk/dataset_makeittalk/src' # raw vox with 1 per vid
+        self.mp4_dir = r'/content/MakeItTalk/dataset_makeittalk/videos'
 
         # self.fls_filenames = glob.glob1(self.src_dir, '*')
-        self.fls_filenames = np.loadtxt(os.path.join(self.src_dir, 'filename_index.txt'), dtype=str)[:, 1]
+        self.fls_filenames = np.loadtxt(os.path.join(self.src_dir, 'filename_index.txt'), dtype=str)
 
         self.num_random_frames = num_frames + 1
 
@@ -619,26 +596,22 @@ class image_translation_raw98_test_dataset(data.Dataset):
 
         # load random face
         random_fls_filename = self.fls_filenames[max(item - 10, 0)]
-        mp4_filename = random_fls_filename[:-4].split('_x_')
-        mp4_id = mp4_filename[0].split('_')[-1]
-        mp4_vname = mp4_filename[1]
-        mp4_vid = mp4_filename[2]
-        random_video_dir = os.path.join(self.mp4_dir, mp4_id, mp4_vname, mp4_vid + '.mp4')
+        mp4_filename = random_fls_filename
+        mp4_filename = mp4_filename.replace('jpg', 'mp4')
+        random_video_dir = os.path.join(self.mp4_dir, mp4_filename)
         print('============================\nvideo_dir : ' + random_video_dir, item)
         random_video = cv2.VideoCapture(random_video_dir)
         if (random_video.isOpened() == False):
             print('Unable to open video file')
             exit(0)
         _, random_face = random_video.read()
-        random_face = cv2.resize(random_face, (256, 256))
+        random_face = cv2.resize(random_face, (512, 512))
 
         # load mp4 file
         # ================= raw VOX version ================================
-        mp4_filename = fls_filename[:-4].split('_x_')
-        mp4_id = mp4_filename[0].split('_')[-1]
-        mp4_vname = mp4_filename[1]
-        mp4_vid = mp4_filename[2]
-        video_dir = os.path.join(self.mp4_dir, mp4_id, mp4_vname, mp4_vid + '.mp4')
+        mp4_filename = fls_filename
+        mp4_filename = mp4_filename.replace('jpg', 'mp4')
+        video_dir = os.path.join(self.mp4_dir, mp4_filename)
         # print('============================\nvideo_dir : ' + video_dir, item)
         # ======================================================================
 
@@ -654,11 +627,11 @@ class image_translation_raw98_test_dataset(data.Dataset):
         for j in range(length):
             ret, img_video = video.read()
 
-            img_video = cv2.resize(img_video, (256, 256))
+            img_video = cv2.resize(img_video, (512, 512))
             frame = np.concatenate((random_face, img_video), axis=2)
             frames.append(frame.transpose((2, 0, 1)))
 
-        frames = np.stack(frames, axis=0).astype(np.float32) / 255.0  # N x 256 x 256 x 9
+        frames = np.stack(frames, axis=0).astype(np.float32) / 255.0  # N x 512 x 512 x 9
 
         image_in = frames[:, 0:3]
         image_out = frames[:, 3:6]
@@ -672,14 +645,8 @@ class image_translation_preprocessed98_test_dataset(data.Dataset):
 
     def __init__(self, num_frames=16):
 
-        if platform.release() == '4.4.0-83-generic':
-            self.src_dir = r'/mnt/ntfs/Dataset/TalkingToon/VoxCeleb2_imagetranslation/raw_fl3d'
-            self.mp4_dir = r'/mnt/ntfs/Dataset/VoxCeleb2/train_set/dev/mp4'
-        else:
-            # self.src_dir = r'/mnt/nfs/scratch1/yangzhou/VoxCeleb2_imagetranslation/raw_fl3d'
-            # self.mp4_dir = r'/mnt/nfs/work1/kalo/yangzhou/VoxCeleb2/train_set/dev/mp4'
-            self.src_dir = r'/mnt/nfs/scratch1/yangzhou/PreprocessedVox_imagetranslation/raw_fl3d'
-            self.mp4_dir = r'/mnt/nfs/scratch1/yangzhou/PreprocessedVox_mp4'
+        self.src_dir = r'/content/MakeItTalk/dataset_makeittalk/src' # raw vox with 1 per vid
+        self.mp4_dir = r'/content/MakeItTalk/dataset_makeittalk/videos'
 
         self.fls_filenames = glob.glob1(self.src_dir, '*')
         self.num_random_frames = num_frames + 1
@@ -701,6 +668,7 @@ class image_translation_preprocessed98_test_dataset(data.Dataset):
             print('Unable to open video file')
             exit(0)
         _, random_face = random_video.read()
+        random_face = cv2.resize(random_face, (512, 512))
 
         # # ================= preprocessed VOX version ================================
         video_dir = os.path.join(self.mp4_dir, fls_filename[10:-7]+'.mp4')
@@ -718,11 +686,11 @@ class image_translation_preprocessed98_test_dataset(data.Dataset):
         for j in range(length):
             ret, img_video = video.read()
 
-            img_video = cv2.resize(img_video, (256, 256))
+            img_video = cv2.resize(img_video, (512, 512))
             frame = np.concatenate((random_face, img_video), axis=2)
             frames.append(frame.transpose((2, 0, 1)))
 
-        frames = np.stack(frames, axis=0).astype(np.float32)/255.0  # N x 256 x 256 x 9
+        frames = np.stack(frames, axis=0).astype(np.float32)/255.0  # N x 512 x 512 x 9
 
         image_in = frames[:, 0:3]
         image_out = frames[:, 3:6]
@@ -741,15 +709,11 @@ class image_translation_raw98_with_audio_dataset(data.Dataset):
 
     def __init__(self, num_frames=1):
 
-        if platform.release() == '4.4.0-83-generic': # stargazer
-            self.src_dir = r'/mnt/ntfs/Dataset/TalkingToon/VoxCeleb2_imagetranslation'
-            self.mp4_dir = r'/mnt/ntfs/Dataset/VoxCeleb2/train_set/dev/mp4'
-        else:
-            self.src_dir = r'/mnt/nfs/scratch1/yangzhou/VoxCeleb2_compressed_imagetranslation'
-            self.mp4_dir = r'/mnt/nfs/work1/kalo/yangzhou/VoxCeleb2/train_set/dev/mp4'
+        self.src_dir = r'/content/MakeItTalk/dataset_makeittalk/src' # raw vox with 1 per vid
+        self.mp4_dir = r'/content/MakeItTalk/dataset_makeittalk/videos'
 
         # self.fls_filenames = glob.glob1(self.src_dir, '*')
-        self.fls_filenames = np.loadtxt(os.path.join(self.src_dir, 'filename_index.txt'), dtype=str)[:, 1]
+        self.fls_filenames = np.loadtxt(os.path.join(self.src_dir, 'filename_index.txt'), dtype=str)
         self.num_random_frames = num_frames + 1
 
         print(os.name, self.fls_filenames.shape)
@@ -792,13 +756,13 @@ class image_translation_raw98_with_audio_dataset(data.Dataset):
             ret, img = video.read()
 
             if(j in random_frame_indices):
-                img_video = cv2.resize(img, (256, 256))
+                img_video = cv2.resize(img, (512, 512))
                 frames.append(img_video.transpose((2, 0, 1)))
 
         frames = np.stack(frames, axis=0).astype(np.float32)/255.0
 
         image_in = frames[1:, :, :]
-        image_out = frames[0:-1, :, :] # N x 3 x 256 x 256
+        image_out = frames[0:-1, :, :] # N x 3 x 512 x 512
 
         # audio
         os.system('ffmpeg -y -loglevel error -i {} -vn -ar 16000 -ac 1 {}'.format(
@@ -822,7 +786,7 @@ class image_translation_raw98_with_audio_dataset(data.Dataset):
         for item in random_frame_indices:
             sel_audio_clip = stft_abs[:, (item-5)*8:(item+5)*8]
             assert sel_audio_clip.shape[1] == 80
-            audio_in.append(np.expand_dims(cv2.resize(sel_audio_clip, (256, 256)), axis=0))
+            audio_in.append(np.expand_dims(cv2.resize(sel_audio_clip, (512, 512)), axis=0))
 
         audio_in = np.stack(audio_in[0:-1], axis=0).astype(np.float32)
         # image_in = np.concatenate([image_in, audio_in], axis=1)
@@ -841,15 +805,11 @@ class image_translation_raw98_with_audio_test_dataset(data.Dataset):
 
     def __init__(self, num_frames=1):
 
-        if platform.release() == '4.4.0-83-generic': # stargazer
-            self.src_dir = r'/mnt/ntfs/Dataset/TalkingToon/VoxCeleb2_imagetranslation'
-            self.mp4_dir = r'/mnt/ntfs/Dataset/VoxCeleb2/train_set/dev/mp4'
-        else:
-            self.src_dir = r'/mnt/nfs/scratch1/yangzhou/VoxCeleb2_compressed_imagetranslation'
-            self.mp4_dir = r'/mnt/nfs/work1/kalo/yangzhou/VoxCeleb2/train_set/dev/mp4'
+        self.src_dir = r'/content/MakeItTalk/dataset_makeittalk/src' # raw vox with 1 per vid
+        self.mp4_dir = r'/content/MakeItTalk/dataset_makeittalk/videos'
 
         # self.fls_filenames = glob.glob1(self.src_dir, '*')
-        self.fls_filenames = np.loadtxt(os.path.join(self.src_dir, 'filename_index.txt'), dtype=str)[:, 1]
+        self.fls_filenames = np.loadtxt(os.path.join(self.src_dir, 'filename_index.txt'), dtype=str)
         self.num_random_frames = num_frames + 1
 
         print(os.name, self.fls_filenames.shape)
@@ -874,7 +834,7 @@ class image_translation_raw98_with_audio_test_dataset(data.Dataset):
             print('Unable to open video file')
             exit(0)
         _, random_face = random_video.read()
-        random_face = cv2.resize(random_face, (256, 256))
+        random_face = cv2.resize(random_face, (512, 512))
 
 
         fls_filename = self.fls_filenames[item]
@@ -899,11 +859,11 @@ class image_translation_raw98_with_audio_test_dataset(data.Dataset):
         for j in range(5, length-5):
             ret, img_video = video.read()
 
-            img_video = cv2.resize(img_video, (256, 256))
+            img_video = cv2.resize(img_video, (512, 512))
             frame = np.concatenate((random_face, img_video), axis=2)
             frames.append(frame.transpose((2, 0, 1)))
 
-        frames = np.stack(frames, axis=0).astype(np.float32) / 255.0  # N x 256 x 256 x 9
+        frames = np.stack(frames, axis=0).astype(np.float32) / 255.0  # N x 512 x 512 x 9
 
         image_in = frames[:, 0:3]
         image_out = frames[:, 3:6]
@@ -930,7 +890,7 @@ class image_translation_raw98_with_audio_test_dataset(data.Dataset):
         for item in range(5, length-5):
             sel_audio_clip = stft_abs[:, (item-5)*8:(item+5)*8]
             assert sel_audio_clip.shape[1] == 80
-            audio_in.append(np.expand_dims(cv2.resize(sel_audio_clip, (256, 256)), axis=0))
+            audio_in.append(np.expand_dims(cv2.resize(sel_audio_clip, (512, 512)), axis=0))
 
         audio_in = np.stack(audio_in, axis=0).astype(np.float32)
         # image_in = np.concatenate([image_in, audio_in], axis=1)

@@ -329,7 +329,7 @@ class Av2Flau_Convertor():
         out = out.overwrite_output().global_args('-loglevel', 'quiet')
         out.run()
 
-        # os.system('ffmpeg -i {} -codec copy -ss {} -t {} {}'.format(video_dir, st, tt, WriteFileName))
+        # os.system('/opt/homebrew/bin/ffmpeg -i {} -codec copy -ss {} -t {} {}'.format(video_dir, st, tt, WriteFileName))
 
     def __save_audio__(self, video_dir, fl3d):
         """

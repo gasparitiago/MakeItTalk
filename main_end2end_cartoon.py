@@ -77,7 +77,7 @@ ains = glob.glob1('examples', '*.wav')
 ains = [item for item in ains if item is not 'tmp.wav']
 ains.sort()
 for ain in ains:
-    os.system('ffmpeg -y -loglevel error -i examples/{} -ar 16000 examples/tmp.wav'.format(ain))
+    os.system('/opt/homebrew/bin/ffmpeg -y -loglevel error -i examples/{} -ar 16000 examples/tmp.wav'.format(ain))
     shutil.copyfile('examples/tmp.wav', 'examples/{}'.format(ain))
 
     # au embedding
@@ -226,7 +226,7 @@ for i in range(0,len(fls_names)):
             os.path.join(cur_dir, '..', 'warped_points.txt'),
             os.path.join(cur_dir, '..', '..', opt_parser.jpg_bg),
             '-novsync -dump'))
-    os.system('ffmpeg -y -r 62.5 -f image2 -i "%06d.tga" -i {} -pix_fmt yuv420p -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" -shortest -strict -2 {}'.format(
+    os.system('/opt/homebrew/bin/ffmpeg -y -r 62.5 -f image2 -i "%06d.tga" -i {} -pix_fmt yuv420p -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" -shortest -strict -2 {}'.format(
         os.path.join(cur_dir, '..', '..', '..', 'examples', ain),
         os.path.join(cur_dir, '..', 'out.mp4')
     ))

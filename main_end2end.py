@@ -99,7 +99,7 @@ ains = glob.glob1('examples', '*.wav')
 ains = [item for item in ains if item is not 'tmp.wav']
 ains.sort()
 for ain in ains:
-    os.system('ffmpeg -y -loglevel error -i examples/{} -ar 16000 examples/tmp.wav'.format(ain))
+    os.system('/opt/homebrew/bin/ffmpeg -y -loglevel error -i examples/{} -ar 16000 examples/tmp.wav'.format(ain))
     shutil.copyfile('examples/tmp.wav', 'examples/{}'.format(ain))
 
     # au embedding

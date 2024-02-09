@@ -14,27 +14,17 @@ import os, glob
 import numpy as np
 import cv2
 import argparse
-from src.dataset.image_translation import landmark_extraction, landmark_image_to_data
-from approaches.train_image_translation import Image_translation_block
+from src.dataset.image_translation.data_preparation import landmark_extraction, landmark_image_to_data
+from src.approaches.train_image_translation import Image_translation_block
 import platform
 import torch
 
 
-if platform.release() == '4.4.0-83-generic':
-    src_dir = r'/mnt/ntfs/Dataset/TalkingToon/VoxCeleb2_imagetranslation/raw_fl3d'
-    mp4_dir = r'/mnt/ntfs/Dataset/VoxCeleb2/train_set/dev/mp4'
-    jpg_dir = r'img_output'
-    ckpt_dir = r'img_output'
-    log_dir = r'img_output'
-else: # 3.10.0-957.21.2.el7.x86_64
-    # root = r'/mnt/nfs/scratch1/yangzhou/VoxCeleb2_imagetranslation'
-    root = r'/mnt/nfs/scratch1/yangzhou/PreprocessedVox_imagetranslation'
-    src_dir = os.path.join(root, 'raw_fl3d')
-    # mp4_dir = r'/mnt/nfs/work1/kalo/yangzhou/VoxCeleb2/train_set/dev/mp4'
-    mp4_dir = r'/mnt/nfs/scratch1/yangzhou/PreprocessedVox_mp4'
-    jpg_dir = os.path.join(root, 'tmp_v')
-    ckpt_dir = os.path.join(root, 'ckpt')
-    log_dir = os.path.join(root, 'log')
+src_dir = r'/content/MakeItTalk/dataset_makeittalk/src'
+mp4_dir = r'/content/MakeItTalk/dataset_makeittalk/videos'
+jpg_dir = r'training1'
+ckpt_dir = r'training1'
+log_dir = r'training1'
 
 ''' Step 1. Data preparation '''
 # landmark extraction
@@ -64,7 +54,7 @@ parser.add_argument('--jpg_freq', type=int, default=50, help='')
 parser.add_argument('--ckpt_last_freq', type=int, default=1000, help='')
 parser.add_argument('--ckpt_epoch_freq', type=int, default=1, help='')
 
-parser.add_argument('--load_G_name', type=str, default='')
+parser.add_argument('--load_G_name', type=str, default='examples/ckpt/ckpt_116_i2i_comb.pth')
 parser.add_argument('--use_vox_dataset', type=str, default='raw')
 
 

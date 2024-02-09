@@ -55,7 +55,7 @@ class Audio2landmark_model():
         print('G: Running on {}, total num params = {:.2f}M'.format(device, get_n_params(self.G)/1.0e6))
 
         model_dict = self.G.state_dict()
-        ckpt = torch.load(opt_parser.load_a2l_G_name)
+        ckpt = torch.load(opt_parser.load_a2l_G_name, map_location=torch.device('cpu'))
         pretrained_dict = {k: v for k, v in ckpt['G'].items() if k.split('.')[0] not in ['comb_mlp']}
         model_dict.update(pretrained_dict)
         self.G.load_state_dict(model_dict)
@@ -68,7 +68,7 @@ class Audio2landmark_model():
                                       in_size=80, use_prior_net=True,
                                       bidirectional=False, drop_out=0.5)
 
-        ckpt = torch.load(opt_parser.load_a2l_C_name)
+        ckpt = torch.load(opt_parser.load_a2l_C_name, map_location=torch.device('cpu'))
         self.C.load_state_dict(ckpt['model_g_face_id'])
         # self.C.load_state_dict(ckpt['C'])
         print('======== LOAD PRETRAINED FACE ID MODEL {} ========='.format(opt_parser.load_a2l_C_name))
@@ -98,6 +98,21 @@ class Audio2landmark_model():
         z = torch.tensor(torch.zeros(aus.shape[0], 128), requires_grad=False, dtype=torch.float).to(device)
         fl_dis_pred, _, spk_encode = self.G(aus, embs * 3.0, face_id, fls_without_traj, z, add_z_spk=False)
 
+        self.G.eval()
+
+        traced = torch.jit.trace(self.G, (aus, embs * 3.0, face_id, fls_without_traj, z))  # Generate TorchScript by tracing.
+        out = traced(aus, embs * 3.0, face_id, fls_without_traj, z)
+        print(out)
+
+        import coremltools as ct
+        # Using image_input in the inputs parameter:
+        # Convert to Core ML program using the Unified Conversion API.
+        model = ct.convert(
+            traced,
+            inputs=[ct.TensorType(shape=aus.shape), ct.TensorType(shape=embs.shape), ct.TensorType(shape=face_id.shape), ct.TensorType(shape=fls_without_traj.shape), ct.TensorType(shape=z.shape)],
+        )
+        model.save("self_g.mlmodel")
+
         # ADD CONTENT
         from scipy.signal import savgol_filter
         smooth_length = int(min(fl_dis_pred.shape[0]-1, smooth_win) // 2 * 2 + 1)
@@ -122,6 +137,22 @@ class Audio2landmark_model():
 
         # ''' CALIBRATION '''
         baseline_pred_fls, _ = self.C(aus[:, 0:18, :], residual_face_id)
+
+        self.C.eval()
+
+        traced2 = torch.jit.trace(self.C, (aus[:, 0:18, :], residual_face_id))  # Generate TorchScript by tracing.
+        out2 = traced2(aus[:, 0:18, :], residual_face_id)
+        print(out2)
+
+        import coremltools as ct
+        # Using image_input in the inputs parameter:
+        # Convert to Core ML program using the Unified Conversion API.
+        model = ct.convert(
+            traced2,
+            inputs=[ct.TensorType(shape=aus[:, 0:18, :].shape), ct.TensorType(shape=residual_face_id.shape)],
+        )
+        model.save("self_c.mlmodel")
+
         baseline_pred_fls = self.__calib_baseline_pred_fls__(baseline_pred_fls)
         fl_dis_pred += baseline_pred_fls
 

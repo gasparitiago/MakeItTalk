@@ -17,7 +17,7 @@ fs = ['suit1_pred_fls_t7_audio_embed.mp4' ]
 
 for f in fs:
 
-    os.system('ffmpeg -y -i examples/{} -filter:v crop=256:256:256:0 -strict -2 examples/crop_{}'.format(f, f))
+    os.system('/opt/homebrew/bin/ffmpeg -y -i examples/{} -filter:v crop=256:256:256:0 -strict -2 examples/crop_{}'.format(f, f))
 
     cap = cv2.VideoCapture('examples/crop_{}'.format(f))
     writer = cv2.VideoWriter('examples/tmp_{}.mp4'.format(f[:-4]),
@@ -101,11 +101,11 @@ for f in fs:
     writer.release()
 
     f = f[:-4]
-    os.system('ffmpeg -loglevel error -y -i {} -vn {}'.format(
+    os.system('/opt/homebrew/bin/ffmpeg -loglevel error -y -i {} -vn {}'.format(
         os.path.join('../examples', '{}.mp4'.format(f)), os.path.join('../examples', 'a_' + f + '.wav')
     ))
 
-    os.system('ffmpeg -loglevel error -y -i {} -i {} -pix_fmt yuv420p -shortest -strict -2 {}'.format(
+    os.system('/opt/homebrew/bin/ffmpeg -loglevel error -y -i {} -i {} -pix_fmt yuv420p -shortest -strict -2 {}'.format(
         os.path.join('../examples', 'tmp_{}.mp4'.format(f)), os.path.join('../examples', 'a_' + f + '.wav'),
         os.path.join('../examples', 'f_' + f + '.mp4')
     ))

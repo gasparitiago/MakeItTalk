@@ -157,14 +157,17 @@ class Image_translation_block():
                 fan_pred_landmarks = fan_pred_landmarks.reshape(-1, 68, 3).detach().cpu().numpy()
             elif(self.opt_parser.add_audio_in):
                 image_in, image_out, audio_in = batch
-                audio_in = audio_in.reshape(-1, 1, 256, 256).to(device)
+                audio_in = audio_in.reshape(-1, 1, 512, 512).to(device)
             else:
                 image_in, image_out = batch
+
+            image_in = cv2.resize(image_in, (512, 512))
+            image_out = cv2.resize(image_out, (512, 512))
 
             with torch.no_grad():
                 # # online landmark (AwingNet)
                 image_in, image_out = \
-                    image_in.reshape(-1, 3, 256, 256).to(device), image_out.reshape(-1, 3, 256, 256).to(device)
+                    image_in.reshape(-1, 3, 512, 512).to(device), image_out.reshape(-1, 3, 512, 512).to(device)
                 inputs = image_out
                 outputs, boundary_channels = self.fa_model(inputs)
                 pred_heatmap = outputs[-1][:, :-1, :, :].detach().cpu()
@@ -185,6 +188,8 @@ class Image_translation_block():
                     img_fl = vis_landmark_on_img74(img_fl, pred_fl)  # 74x2
                 else:
                     img_fl = vis_landmark_on_img98(img_fl, pred_fl)  # 98x2
+
+                img_fl = cv2.resize(img_fl, (512, 512))
                 img_fls.append(img_fl.transpose((2, 0, 1)))
             img_fls = np.stack(img_fls, axis=0).astype(np.float32) / 255.0
             image_fls_in = torch.tensor(img_fls, requires_grad=False).to(device)
@@ -196,7 +201,7 @@ class Image_translation_block():
                 image_in = torch.cat([image_fls_in, image_in], dim=1)
 
             # image_in, image_out = \
-            #     image_in.reshape(-1, 6, 256, 256).to(device), image_out.reshape(-1, 3, 256, 256).to(device)
+            #     image_in.reshape(-1, 6, 512, 512).to(device), image_out.reshape(-1, 3, 512, 512).to(device)
 
             # image2image net fp
             g_out = self.G(image_in)
@@ -297,14 +302,14 @@ class Image_translation_block():
 
             if (self.opt_parser.add_audio_in):
                 image_in, image_out, audio_in = batch
-                audio_in = audio_in.reshape(-1, 1, 256, 256).to(device)
+                audio_in = audio_in.reshape(-1, 1, 512, 512).to(device)
             else:
                 image_in, image_out = batch
 
             # # online landmark (AwingNet)
             with torch.no_grad():
                 image_in, image_out = \
-                    image_in.reshape(-1, 3, 256, 256).to(device), image_out.reshape(-1, 3, 256, 256).to(device)
+                    image_in.reshape(-1, 3, 512, 512).to(device), image_out.reshape(-1, 3, 512, 512).to(device)
 
                 pred_landmarks = []
                 for j in range(image_in.shape[0] // 16):
@@ -320,6 +325,7 @@ class Image_translation_block():
             for pred_fl in pred_landmarks:
                 img_fl = np.ones(shape=(256, 256, 3)) * 255.0
                 img_fl = vis_landmark_on_img98(img_fl, pred_fl)  # 98x2
+                img_fl = cv2.resize(img_fl, (512, 512))
                 img_fls.append(img_fl.transpose((2, 0, 1)))
             img_fls = np.stack(img_fls, axis=0).astype(np.float32) / 255.0
             image_fls_in = torch.tensor(img_fls, requires_grad=False).to(device)
@@ -333,14 +339,14 @@ class Image_translation_block():
                 image_in = torch.cat([image_fls_in, image_in[0:image_fls_in.shape[0]]], dim=1)
 
             # normal 68 test dataset
-            # image_in, image_out = image_in.reshape(-1, 6, 256, 256), image_out.reshape(-1, 3, 256, 256)
+            # image_in, image_out = image_in.reshape(-1, 6, 512, 512), image_out.reshape(-1, 3, 512, 512)
 
             # random single frame
             # cv2.imwrite('random_img_{}.jpg'.format(i), np.swapaxes(image_out[5].numpy(),0, 2)*255.0)
 
             image_in, image_out = image_in.to(device), image_out.to(device)
 
-            writer = cv2.VideoWriter('tmp_{:04d}.mp4'.format(i), cv2.VideoWriter_fourcc(*'mjpg'), 25, (256*4, 256))
+            writer = cv2.VideoWriter('tmp_{:04d}.mp4'.format(i), cv2.VideoWriter_fourcc(*'mjpg'), 25, (512*4, 512))
 
             for j in range(image_in.shape[0] // 16):
                 g_out = self.G(image_in[j*16:j*16+16])
@@ -363,7 +369,7 @@ class Image_translation_block():
 
             writer.release()
 
-            os.system('ffmpeg -y -i tmp_{:04d}.mp4 -pix_fmt yuv420p random_{:04d}.mp4'.format(i, i))
+            os.system('/opt/homebrew/bin/ffmpeg -y -i tmp_{:04d}.mp4 -pix_fmt yuv420p random_{:04d}.mp4'.format(i, i))
             os.system('rm tmp_{:04d}.mp4'.format(i))
 
 
@@ -376,6 +382,8 @@ class Image_translation_block():
             jpg = glob.glob1(self.opt_parser.single_test, '*.jpg')[0]
             jpg = cv2.imread(os.path.join(self.opt_parser.single_test, jpg))
 
+        jpg = cv2.resize(jpg, (512, 512))
+
         if(fls is None):
             fls = glob.glob1(self.opt_parser.single_test, '*.txt')[0]
             fls = np.loadtxt(os.path.join(self.opt_parser.single_test, fls))
@@ -383,21 +391,22 @@ class Image_translation_block():
             fls[:, 0::3] += 130
             fls[:, 1::3] += 80
 
-        writer = cv2.VideoWriter('out.mp4', cv2.VideoWriter_fourcc(*'mjpg'), 62.5, (256 * 3, 256))
+        writer = cv2.VideoWriter('out.mp4', cv2.VideoWriter_fourcc(*'mjpg'), 62.5, (512 * 3, 512))
 
         for i, frame in enumerate(fls):
 
             img_fl = np.ones(shape=(256, 256, 3)) * 255
             fl = frame.astype(int)
             img_fl = vis_landmark_on_img(img_fl, np.reshape(fl, (68, 3)))
+            img_fl = cv2.resize(img_fl, (512, 512))
             frame = np.concatenate((img_fl, jpg), axis=2).astype(np.float32)/255.0
 
-            image_in, image_out = frame.transpose((2, 0, 1)), np.zeros(shape=(3, 256, 256))
-            # image_in, image_out = frame.transpose((2, 1, 0)), np.zeros(shape=(3, 256, 256))
+            image_in, image_out = frame.transpose((2, 0, 1)), np.zeros(shape=(3, 512, 512))
+            # image_in, image_out = frame.transpose((2, 1, 0)), np.zeros(shape=(3, 512, 512))
             image_in, image_out = torch.tensor(image_in, requires_grad=False), \
                                   torch.tensor(image_out, requires_grad=False)
 
-            image_in, image_out = image_in.reshape(-1, 6, 256, 256), image_out.reshape(-1, 3, 256, 256)
+            image_in, image_out = image_in.reshape(-1, 6, 512, 512), image_out.reshape(-1, 3, 512, 512)
             image_in, image_out = image_in.to(device), image_out.to(device)
 
             g_out = self.G(image_in)
@@ -426,7 +435,7 @@ class Image_translation_block():
 
         if(filename is None):
             filename = 'v'
-        os.system('ffmpeg -loglevel error -y -i out.mp4 -i {} -pix_fmt yuv420p -strict -2 examples/{}_{}.mp4'.format(
+        os.system('/opt/homebrew/bin/ffmpeg -loglevel error -y -i out.mp4 -i {} -pix_fmt yuv420p -strict -2 examples/{}_{}.mp4'.format(
             'examples/'+filename[9:-16]+'.wav',
             prefix, filename[:-4]))
         # os.system('rm out.mp4')

@@ -49,13 +49,13 @@ class Vis():
 
         if(audio_filenam is not None):
             print(audio_filenam)
-            os.system('ffmpeg -y -i {} -i {} -strict -2 -shortest {}'.format(
+            os.system('/opt/homebrew/bin/ffmpeg -y -i {} -i {} -strict -2 -shortest {}'.format(
                 os.path.join('examples', 'tmp.mp4'),
                 audio_filenam,
                 os.path.join('examples', '{}_av.mp4'.format(filename))
             ))
         else:
-            os.system('ffmpeg -y -i {} {}'.format(
+            os.system('/opt/homebrew/bin/ffmpeg -y -i {} {}'.format(
                 os.path.join('examples', 'tmp.mp4'),
                 os.path.join('examples', '{}_av.mp4'.format(filename))
             ))
@@ -141,12 +141,12 @@ class Vis_old():
         # out = out.overwrite_output().global_args('-loglevel', 'quiet')
         # out.run()
 
-        os.system('ffmpeg -y -loglevel error -i {} -ss {} {}'.format(
+        os.system('/opt/homebrew/bin/ffmpeg -y -loglevel error -i {} -ss {} {}'.format(
             ain, rand_start/62.5,
             os.path.join(self.src_dir, '{}_a_tmp.wav'.format(av_name))
         ))
 
-        os.system('ffmpeg -y -loglevel error -i {} -i {} -pix_fmt yuv420p -strict -2 -shortest {}'.format(
+        os.system('/opt/homebrew/bin/ffmpeg -y -loglevel error -i {} -i {} -pix_fmt yuv420p -strict -2 -shortest {}'.format(
             os.path.join(self.src_dir, 'tmp.mp4'),
             os.path.join(self.src_dir, '{}_a_tmp.wav'.format(av_name)),
             os.path.join(self.src_dir, '{}_av.mp4'.format(av_name))
@@ -235,7 +235,7 @@ class Vis_comp():
         else:
             ain = os.path.join(root_dir, 'raw_wav', '{}'.format(audio_filename))
 
-        os.system('ffmpeg -y -loglevel error -i {} -i {} -pix_fmt yuv420p -strict -2 -shortest {}'.format(
+        os.system('/opt/homebrew/bin/ffmpeg -y -loglevel error -i {} -i {} -pix_fmt yuv420p -strict -2 -shortest {}'.format(
             os.path.join(self.src_dir, 'tmp.mp4'),
             ain,
             os.path.join(self.src_dir, '{}_av.mp4'.format(av_name))

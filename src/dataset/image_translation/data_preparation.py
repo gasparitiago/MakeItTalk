@@ -14,12 +14,8 @@ import cv2
 from src.dataset.utils.Av2Flau_Convertor import Av2Flau_Convertor
 import platform
 
-if platform.release() == '4.4.0-83-generic':
-    src_dir = r'/mnt/ntfs/Dataset/TalkingToon/VoxCeleb2_imagetranslation/raw_fl3d'
-    mp4_dir = r'/mnt/ntfs/Dataset/VoxCeleb2/train_set/dev/mp4'
-else:
-    src_dir = r'/mnt/nfs/work1/kalo/yangzhou/VoxCeleb2/train_set/dev/mp4'
-    out_dir = r'/mnt/nfs/scratch1/yangzhou/VoxCeleb2_compressed_imagetranslation'
+src_dir = r'/content/MakeItTalk/dataset_makeittalk/src'
+out_dir = r'/content/MakeItTalk/dataset_makeittalk/videos'
 
 def landmark_extraction(si, ei):
     '''
@@ -138,7 +134,7 @@ def landmark_image_to_data(si, ei, show=False):
             w = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
             h = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
             print('Process Video {}, len: {}, FPS: {:.2f}, W X H: {} x {}'.format(video_dir, length, fps, w, h))
-            writer = cv2.VideoWriter('a.mp4', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), fps, (512, 256))
+            writer = cv2.VideoWriter('a.mp4', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), fps, (512, 512))
 
             # skip first several frames due to landmark extraction
             start_idx = fls[0, 0].astype(int)
@@ -157,7 +153,7 @@ def landmark_image_to_data(si, ei, show=False):
                 ret, img_video = video.read()
 
                 frame = np.concatenate((img_fl, img_video), axis=1)
-                frame = cv2.resize(frame, (512, 256))
+                frame = cv2.resize(frame, (512, 512))
                 writer.write(frame.astype(np.uint8))
 
             video.release()
@@ -181,12 +177,15 @@ def landmark_image_to_data(si, ei, show=False):
                 fl = fls[j, 1:].astype(int)
                 img_fl = vis_landmark_on_img(img_fl, np.reshape(fl, (68, 3)))
 
+                img_fl = cv2.resize(img_fl, (512, 512))
+
                 ret, img_video = video.read()
+                img_video = cv2.resize(img_video, (512, 512))
 
                 frame = np.concatenate((img_fl, img_video), axis=2)
-                frame = cv2.resize(frame, (256, 256)) # 256 x 256  6
+                frame = cv2.resize(frame, (512, 512)) # 512 x 512  6
                 frames.append(frame)
-            frames = np.stack(frames, axis=0).astype(int) # N x 256 x 256 x 6
+            frames = np.stack(frames, axis=0).astype(int) # N x 512 x 512 x 6
             pf[fls_filename] = frames
 
     # save to pickle file
